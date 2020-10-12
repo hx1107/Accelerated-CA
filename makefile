@@ -1,6 +1,6 @@
 CC=g++
 NVCC=nvcc
-CUDAFLAGS= -O3 -std=c++11 -ccbin gcc-7
+CUDAFLAGS= -O3 -std=c++11 -ccbin gcc-7 -g
 LIBS= -lm -lstdc++
 CFLAGS = -DNDIM=2
 
