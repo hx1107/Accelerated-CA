@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 #include <unistd.h>
 
 /*#define USE_CUDA*/
@@ -14,7 +15,7 @@
 #define CANVAS_SIZE_X 100
 #endif
 #ifndef CANVAS_SIZE_Y
-#define CANVAS_SIZE_Y 100
+#define CANVAS_SIZE_Y 350
 #endif
 #ifndef NUM_RULE
 #define NUM_RULE 10
@@ -60,7 +61,7 @@ cell* host_buffer;
 void init()
 {
     debug_print("Using %lu dimensional canvas of size %zux%zu with %d bit colors\n", NDIM, CANVAS_SIZE_X, CANVAS_SIZE_Y, N_COLOR_BIT);
-    debug_print("Using two buffer each of size %lu, or %lu cells\n", BUFFER_SIZE, BUFFER_SIZE / sizeof(cell));
+    debug_print("Using two buffer each of size %lu mb, or %lu cells\n", BUFFER_SIZE/1024/1024, BUFFER_SIZE / sizeof(cell));
 
 #ifdef USE_CUDA
     if (cuda_buffer1) {
@@ -94,7 +95,7 @@ void init()
     debug_print("Initialization done!\n");
 }
 
-unsigned int update_cell_bin_2d(cell& center, cell& c1, cell& c2, cell& c3, cell& c4, cell& c5, cell& c6, cell& c7, cell& c8)
+inline unsigned int update_cell_bin_2d(cell& center, cell& c1, cell& c2, cell& c3, cell& c4, cell& c5, cell& c6, cell& c7, cell& c8)
 {
     unsigned int sum = c1.x
         + c2.x
@@ -112,7 +113,11 @@ unsigned int update_cell_bin_2d(cell& center, cell& c1, cell& c2, cell& c3, cell
     return 0;
 }
 
-void update(cell* dest, cell* origin)
+#ifndef USE_CUDA
+inline
+#endif
+    void
+    update(cell* dest, cell* origin)
 {
 #ifdef USE_CUDA
     debug_print("Not Implemented!\n");
@@ -136,9 +141,21 @@ void update(cell* dest, cell* origin)
 #endif
 }
 
-void copy_buffer(cell* dst, cell* src)
+inline void copy_buffer_to_host(cell* dst, cell* src)
 {
+#ifndef USE_CUDA
     memcpy(dst, src, BUFFER_SIZE);
+#else
+    cudaMemcpy(dst, src, BUFFER_SIZE, cudaMemcpyDeviceToHost);
+#endif
+}
+inline void copy_buffer_to_device(cell* dst, cell* src)
+{
+#ifndef USE_CUDA
+    memcpy(dst, src, BUFFER_SIZE);
+#else
+    cudaMemcpy(dst, src, BUFFER_SIZE, cudaMemcpyHostToDevice);
+#endif
 }
 
 void print_buffer(cell* src)
@@ -161,23 +178,25 @@ int main(void)
         host_buffer[idx(i, i + 1)].x = 1;
         host_buffer[idx(i, i - 1)].x = 1;
         host_buffer[idx(i, i - 5)].x = 1;
-        host_buffer[idx(i-1, i - 6)].x = 1;
+        host_buffer[idx(i - 1, i - 6)].x = 1;
         host_buffer[idx(i, i - 6)].x = 1;
     }
     print_buffer(host_buffer);
-    copy_buffer(cuda_buffer1, host_buffer);
+    copy_buffer_to_device(cuda_buffer1, host_buffer);
 
-    int iteration = 2000;
+    int iteration = 200000;
+    int delay = 30000;
     for (int i = 0; i < iteration / 2; i++) {
         fprintf(stdout, "---------------------Iteration %d-------------------------\n", 2 * i);
         update(cuda_buffer2, cuda_buffer1);
-        copy_buffer(host_buffer, cuda_buffer2);
+        copy_buffer_to_host(host_buffer, cuda_buffer2);
         print_buffer(host_buffer);
-
+        usleep(delay);
         fprintf(stdout, "---------------------Iteration %d-------------------------\n", 2 * i + 1);
         update(cuda_buffer1, cuda_buffer2);
-        copy_buffer(host_buffer, cuda_buffer1);
+        copy_buffer_to_host(host_buffer, cuda_buffer1);
         print_buffer(host_buffer);
+        usleep(delay);
     }
 
     /*
