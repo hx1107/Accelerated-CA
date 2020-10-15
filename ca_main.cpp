@@ -2,8 +2,13 @@
 #include <time.h>
 #include <unistd.h>
 
-/*#define USE_CUDA*/
-#undef USE_CUDA
+#define USE_CUDA
+//#undef USE_CUDA
+
+#define DO_TERM_DISPLAY
+//#undef DO_TERM_DISPLAY
+
+#define BLOCK_SIZE 256
 
 #ifndef NDIM
 #define NDIM 2
@@ -47,7 +52,7 @@ typedef struct cell {
     unsigned int x : N_COLOR_BIT;
 } cell;
 
-size_t idx(int X, int Y)
+inline size_t idx(int X, int Y)
 {
     if (Y >= 0 && X >= 0 && ((Y * CANVAS_SIZE_X + X) < NUM_CELLS - 1)) {
         return (Y * CANVAS_SIZE_X + X);
@@ -55,13 +60,22 @@ size_t idx(int X, int Y)
         return NUM_CELLS - 1;
     }
 }
+inline size_t xdi_x(size_t i)
+{
+    return i % CANVAS_SIZE_X;
+}
+
+inline size_t xdi_y(size_t i)
+{
+    return i / CANVAS_SIZE_X;
+}
 cell *cuda_buffer1 = NULL, *cuda_buffer2 = NULL;
 cell* host_buffer;
 
 void init()
 {
     debug_print("Using %lu dimensional canvas of size %zux%zu with %d bit colors\n", NDIM, CANVAS_SIZE_X, CANVAS_SIZE_Y, N_COLOR_BIT);
-    debug_print("Using two buffer each of size %lu mb, or %lu cells\n", BUFFER_SIZE/1024/1024, BUFFER_SIZE / sizeof(cell));
+    debug_print("Using two buffer each of size %lu mb, or %lu cells\n", BUFFER_SIZE / 1024 / 1024, BUFFER_SIZE / sizeof(cell));
 
 #ifdef USE_CUDA
     if (cuda_buffer1) {
@@ -113,6 +127,15 @@ inline unsigned int update_cell_bin_2d(cell& center, cell& c1, cell& c2, cell& c
     return 0;
 }
 
+__global__ void update_cell_bin_2d_CUDA()
+{
+    size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < CANVAS_SIZE_X * CANVAS_SIZE_Y) {
+        size_t x = xdi_x(i), y = xdi_y(i);
+        debug_print("Update %d: [%lu,%lu]\n", i, x, y);
+    }
+}
+
 #ifndef USE_CUDA
 inline
 #endif
@@ -120,7 +143,8 @@ inline
     update(cell* dest, cell* origin)
 {
 #ifdef USE_CUDA
-    debug_print("Not Implemented!\n");
+    //debug_print("Not Implemented!\n");
+    update_cell_bin_2d_CUDA<<<ceil(CANVAS_SIZE_X * CANVAS_SIZE_Y / BLOCK_SIZE), BLOCK_SIZE>>>();
     return;
 #else
     for (int x = 0; x < CANVAS_SIZE_X; x++) {
@@ -158,8 +182,10 @@ inline void copy_buffer_to_device(cell* dst, cell* src)
 #endif
 }
 
-void print_buffer(cell* src)
+inline void print_buffer(cell* src)
 {
+#ifdef DO_TERM_DISPLAY
+    fprintf(stdout, "---------------------Iteration-------------------------\n");
     for (int x = 0; x < CANVAS_SIZE_X; x++) {
         for (int y = 0; y < CANVAS_SIZE_Y; y++) {
             //debug_print("(%zu, %zu) -> %zu\n", x, y, idx(x, y));
@@ -167,6 +193,7 @@ void print_buffer(cell* src)
         }
         fprintf(stdout, "|\n");
     }
+#endif
 }
 
 int main(void)
@@ -184,15 +211,18 @@ int main(void)
     print_buffer(host_buffer);
     copy_buffer_to_device(cuda_buffer1, host_buffer);
 
-    int iteration = 200000;
+    int iteration = 20000;
+#ifdef DO_TERM_DISPLAY
     int delay = 30000;
+#else
+    int delay = 0;
+#endif
     for (int i = 0; i < iteration / 2; i++) {
-        fprintf(stdout, "---------------------Iteration %d-------------------------\n", 2 * i);
         update(cuda_buffer2, cuda_buffer1);
         copy_buffer_to_host(host_buffer, cuda_buffer2);
         print_buffer(host_buffer);
         usleep(delay);
-        fprintf(stdout, "---------------------Iteration %d-------------------------\n", 2 * i + 1);
+
         update(cuda_buffer1, cuda_buffer2);
         copy_buffer_to_host(host_buffer, cuda_buffer1);
         print_buffer(host_buffer);
