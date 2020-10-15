@@ -6,7 +6,7 @@
 //#undef USE_CUDA
 
 #define DO_TERM_DISPLAY
-//#undef DO_TERM_DISPLAY
+#undef DO_TERM_DISPLAY
 
 #define BLOCK_SIZE 256
 
@@ -20,7 +20,7 @@
 #define CANVAS_SIZE_X 100
 #endif
 #ifndef CANVAS_SIZE_Y
-#define CANVAS_SIZE_Y 350
+#define CANVAS_SIZE_Y 375
 #endif
 #ifndef NUM_RULE
 #define NUM_RULE 10
@@ -52,7 +52,7 @@ typedef struct cell {
     unsigned int x : N_COLOR_BIT;
 } cell;
 
-inline size_t idx(int X, int Y)
+__host__ __device__ inline size_t idx(int X, int Y)
 {
     if (Y >= 0 && X >= 0 && ((Y * CANVAS_SIZE_X + X) < NUM_CELLS - 1)) {
         return (Y * CANVAS_SIZE_X + X);
@@ -60,12 +60,12 @@ inline size_t idx(int X, int Y)
         return NUM_CELLS - 1;
     }
 }
-inline size_t xdi_x(size_t i)
+__host__ __device__ inline size_t xdi_x(size_t i)
 {
     return i % CANVAS_SIZE_X;
 }
 
-inline size_t xdi_y(size_t i)
+__host__ __device__ inline size_t xdi_y(size_t i)
 {
     return i / CANVAS_SIZE_X;
 }
@@ -109,7 +109,7 @@ void init()
     debug_print("Initialization done!\n");
 }
 
-inline unsigned int update_cell_bin_2d(cell& center, cell& c1, cell& c2, cell& c3, cell& c4, cell& c5, cell& c6, cell& c7, cell& c8)
+__host__ __device__ inline unsigned int update_cell_bin_2d(cell& center, cell& c1, cell& c2, cell& c3, cell& c4, cell& c5, cell& c6, cell& c7, cell& c8)
 {
     unsigned int sum = c1.x
         + c2.x
@@ -127,12 +127,20 @@ inline unsigned int update_cell_bin_2d(cell& center, cell& c1, cell& c2, cell& c
     return 0;
 }
 
-__global__ void update_cell_bin_2d_CUDA()
+__global__ void update_cell_bin_2d_CUDA(cell* dest, cell* origin)
 {
     size_t i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < CANVAS_SIZE_X * CANVAS_SIZE_Y) {
         size_t x = xdi_x(i), y = xdi_y(i);
-        debug_print("Update %d: [%lu,%lu]\n", i, x, y);
+        dest[i].x = update_cell_bin_2d(origin[i],
+            origin[idx(x - 1, y - 1)],
+            origin[idx(x + 1, y + 1)],
+            origin[idx(x, y - 1)],
+            origin[idx(x - 1, y)],
+            origin[idx(x + 1, y)],
+            origin[idx(x, y + 1)],
+            origin[idx(x - 1, y + 1)],
+            origin[idx(x + 1, y - 1)]);
     }
 }
 
@@ -144,7 +152,7 @@ inline
 {
 #ifdef USE_CUDA
     //debug_print("Not Implemented!\n");
-    update_cell_bin_2d_CUDA<<<ceil(CANVAS_SIZE_X * CANVAS_SIZE_Y / BLOCK_SIZE), BLOCK_SIZE>>>();
+    update_cell_bin_2d_CUDA<<<ceil(CANVAS_SIZE_X * CANVAS_SIZE_Y / BLOCK_SIZE), BLOCK_SIZE>>>(dest, origin);
     return;
 #else
     for (int x = 0; x < CANVAS_SIZE_X; x++) {
@@ -228,30 +236,4 @@ int main(void)
         print_buffer(host_buffer);
         usleep(delay);
     }
-
-    /*
-       cudaMemcpy(d_x, x, N * sizeof(float), cudaMemcpyHostToDevice);
-       cudaMemcpy(d_y, y, N * sizeof(float), cudaMemcpyHostToDevice);
-
-    // Perform SAXPY on 1M elements
-    saxpy<<<(N + 255) / 256, 256>>>(N, 2.0f, d_x, d_y);
-
-    cudaMemcpy(y, d_y, N * sizeof(float), cudaMemcpyDeviceToHost);
-
-    float maxError = 0.0f;
-    for (int i = 0; i < N; i++)
-    maxError = max(maxError, abs(y[i] - 4.0f));
-    printf("Max error: %f\n", maxError);
-
-    cudaFree(d_x);
-    cudaFree(d_y);
-    free(x);
-    free(y);
-     */
 }
-/*__global__ void saxpy(int n, float a, float* x, float* y)
-  {
-  int i = blockIdx.x * blockDim.x + threadIdx.x;
-  if (i < n)
-  y[i] = a * x[i] + y[i];
-  }*/
