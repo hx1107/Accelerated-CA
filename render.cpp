@@ -21,12 +21,18 @@ int do_stop_render = 0;
 pthread_t win_thread_id;
 SDL_Window* window;
 SDL_GLContext context;
+//GLfloat vertices[] = {
+////  Position      Color             Texcoords
+//-0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
+//0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // Top-right
+//0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
+//-0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f // Bottom-left
+//};
 GLfloat vertices[] = {
-//  Position      Color             Texcoords
--0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
-0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // Top-right
-0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
--0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f // Bottom-left
+    -0.5f, 0.5f,  // Top-left
+    0.5f, 0.5f,   // Top-right
+    0.5f, -0.5f,  // Bottom-right
+    -0.5f, -0.5f, // Bottom-left
 };
 
 void* window_thread(void* args)
@@ -71,12 +77,12 @@ void* window_thread(void* args)
                 break;
             }
         }
-        // Draw a triangle from the 3 vertices
+        // Draw a triangle from the vertices
         glEnableVertexAttribArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
         // Specify the layout of the vertex data
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+        glDrawArrays(GL_LINE_LOOP, 0, COUNT_OF(vertices) / 2);
         glDisableVertexAttribArray(0);
 
         // Swap buffers

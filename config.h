@@ -40,6 +40,7 @@
     do {                 \
     } while (0)
 #endif
+#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
 #define cudaCalloc(A, B, C)                                  \
     do {                                                     \
         cudaError_t __cudaCalloc_err = cudaMalloc(A, B * C); \
