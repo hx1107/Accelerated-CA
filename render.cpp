@@ -7,28 +7,27 @@
 #include <GL/glext.h>
 #include <GL/glu.h>
 #include <SDL2/SDL.h>
+#include <fstream>
+#include <iostream>
 #include <pthread.h>
+#include <sstream>
 #include <unistd.h>
+using namespace std;
 GLuint load_and_compile_shader(const char* source);
+GLuint load_shader_program(char* vtx_shader_file, char* frag_shader_file);
 
 int do_stop_render = 0;
 
 pthread_t win_thread_id;
 SDL_Window* window;
 SDL_GLContext context;
-//GLfloat vertices[] = {
-    ////  Position      Color             Texcoords
-    //-0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
-    //0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // Top-right
-    //0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
-    //-0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f // Bottom-left
-//};
 GLfloat vertices[] = {
-         0.0f,  0.5f,
-         0.5f, -0.5f,
-        -0.5f, -0.5f
-    };
-
+//  Position      Color             Texcoords
+-0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // Top-left
+0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // Top-right
+0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, // Bottom-right
+-0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f // Bottom-left
+};
 
 void* window_thread(void* args)
 {
@@ -41,39 +40,19 @@ void* window_thread(void* args)
     glewExperimental = GL_TRUE;
     glewInit();
 
-    GLuint vbo; // Generated vertex buffer
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices)*sizeof(GLfloat)*3, vertices, GL_STATIC_DRAW); // Upload to GPU
+    GLuint VertexArrayID;
+    glGenVertexArrays(1, &VertexArrayID);
+    glBindVertexArray(VertexArrayID);
+    GLuint vertexbuffer;
+    glGenBuffers(1, &vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // Compile shaders and use them
-    GLuint vertexShader = load_and_compile_shader(R"glsl(
-    #version 150 core
-    in vec2 position;
-    void main()
-    {
-        gl_Position = vec4(position, 0.0, 1.0);
-    }
-    )glsl");
-    GLuint fragmentShader = load_and_compile_shader(R"glsl(
-    #version 150 core    
-    out vec4 outColor;
-    void main()
-    {
-        outColor = vec4(1.0, 1.0, 1.0, 1.0);
-    }
-    )glsl");
-    GLuint shaderProgram = glCreateProgram();
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
+    GLuint shaderProgram = load_shader_program("./shaders/vtxShader.vs", "./shaders/fragShader.fs");
     glBindFragDataLocation(shaderProgram, 0, "outColor");
     glLinkProgram(shaderProgram);
     glUseProgram(shaderProgram);
-
-    // Specify the layout of the vertex data
-    GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(posAttrib);
 
     //GLuint tex;
     //glGenTextures(1, &tex); // Generate a 2D texture
@@ -86,15 +65,20 @@ void* window_thread(void* args)
     SDL_Event windowEvent;
     while (!do_stop_render) {
         if (SDL_PollEvent(&windowEvent)) {
-            if (windowEvent.type == SDL_QUIT){
+            if (windowEvent.type == SDL_QUIT) {
                 debug_print("Exit\n");
                 abort();
                 break;
             }
         }
-
         // Draw a triangle from the 3 vertices
+        glEnableVertexAttribArray(0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+        // Specify the layout of the vertex data
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDisableVertexAttribArray(0);
+
         // Swap buffers
         SDL_GL_SwapWindow(window);
     }
@@ -113,6 +97,15 @@ void render_disinit()
     sleep(1); // Race condition here, but doesn't really matter for now
     SDL_GL_DeleteContext(context);
     SDL_Quit();
+}
+
+/** Read file into string. */
+inline string slurp(const string& path)
+{
+    ostringstream buf;
+    ifstream input(path.c_str());
+    buf << input.rdbuf();
+    return buf.str();
 }
 
 GLuint load_and_compile_shader(const char* source)
@@ -134,4 +127,15 @@ GLuint load_and_compile_shader(const char* source)
     }
 
     return shader;
+}
+GLuint load_shader_program(char* vtx_shader_file, char* frag_shader_file)
+{
+    string vtx_src = slurp(vtx_shader_file);
+    GLuint vtx = load_and_compile_shader(vtx_src.c_str());
+    string frag_src = slurp(frag_shader_file);
+    GLuint frag = load_and_compile_shader(frag_src.c_str());
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vtx);
+    glAttachShader(shaderProgram, frag);
+    return shaderProgram;
 }
