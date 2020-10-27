@@ -1,56 +1,14 @@
+#include "config.h"
+#include "render.h"
 #include <stdio.h>
 #include <time.h>
 #include <unistd.h>
 
-#define USE_CUDA
-//#undef USE_CUDA
-
-#define DO_TERM_DISPLAY
-#undef DO_TERM_DISPLAY
-
-#define BLOCK_SIZE 256
-
-#ifndef NDIM
-#define NDIM 2
-#endif
-#ifndef N_COLOR_BIT
-#define N_COLOR_BIT 4
-#endif
-#ifndef CANVAS_SIZE_X
-#define CANVAS_SIZE_X 100
-#endif
-#ifndef CANVAS_SIZE_Y
-#define CANVAS_SIZE_Y 375
-#endif
-#ifndef NUM_RULE
-#define NUM_RULE 10
-#endif
-#ifndef BUFFER_SIZE
-#define BUFFER_SIZE ((CANVAS_SIZE_X * CANVAS_SIZE_Y + 1) * sizeof(cell))
-#define NUM_CELLS (BUFFER_SIZE / sizeof(cell))
-#endif
-#ifdef DEBUG
-#define debug_print(...)     \
-    do {                     \
-        printf(__VA_ARGS__); \
-    } while (0)
-#else
-#define debug_print(...) \
-    do {                 \
-    } while (0)
-#endif
-#define cudaCalloc(A, B, C)                                  \
-    do {                                                     \
-        cudaError_t __cudaCalloc_err = cudaMalloc(A, B * C); \
-        if (__cudaCalloc_err == cudaSuccess)                 \
-            cudaMemset(*A, 0, B* C);                         \
-    } while (0)
-
-//#define idx(X, Y) (X >= 0 && Y >= 0 && ((Y * CANVAS_SIZE_X + X) < NUM_CELLS - 1) ? (Y * CANVAS_SIZE_X + X) : NUM_CELLS - 1)
-
 typedef struct cell {
     unsigned int x : N_COLOR_BIT;
 } cell;
+static cell *cuda_buffer1 = NULL, *cuda_buffer2 = NULL;
+//static cell* host_buffer = NULL;
 
 __host__ __device__ inline size_t idx(int X, int Y)
 {
@@ -69,8 +27,6 @@ __host__ __device__ inline size_t xdi_y(size_t i)
 {
     return i / CANVAS_SIZE_X;
 }
-cell *cuda_buffer1 = NULL, *cuda_buffer2 = NULL;
-cell* host_buffer;
 
 void init()
 {
@@ -151,13 +107,11 @@ inline
     update(cell* dest, cell* origin)
 {
 #ifdef USE_CUDA
-    //debug_print("Not Implemented!\n");
     update_cell_bin_2d_CUDA<<<ceil(CANVAS_SIZE_X * CANVAS_SIZE_Y / BLOCK_SIZE), BLOCK_SIZE>>>(dest, origin);
     return;
 #else
     for (int x = 0; x < CANVAS_SIZE_X; x++) {
         for (int y = 0; y < CANVAS_SIZE_Y; y++) {
-            /*debug_print("Update (%zu,%zu)\n",x,y);*/
             size_t i = idx(x, y);
             dest[i].x = update_cell_bin_2d(origin[i],
                 origin[idx(x - 1, y - 1)],
@@ -219,7 +173,9 @@ int main(void)
     print_buffer(host_buffer);
     copy_buffer_to_device(cuda_buffer1, host_buffer);
 
-    int iteration = 20000;
+    render_init();
+
+    int iteration = 8000;
 #ifdef DO_TERM_DISPLAY
     int delay = 30000;
 #else
