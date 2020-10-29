@@ -35,6 +35,18 @@ GLfloat vertices[] = {
     -0.5f, -0.5f, // Bottom-left
 };
 
+GLbyte test_img[4] = { 0, 1, 0, 1 };
+
+void check_GL_error()
+{
+    const GLubyte* errString = NULL;
+    int errCode;
+    if ((errCode = glGetError()) != GL_NO_ERROR) {
+        errString = gluErrorString(errCode);
+        debug_print("GL Error: %s\n", errString);
+    }
+}
+
 void* window_thread(void* args)
 {
     debug_print("Thread for window is running\n");
@@ -60,18 +72,22 @@ void* window_thread(void* args)
     // Compile shaders and use them
     GLuint shaderProgram = load_shader_program("./shaders/vtxShader.vs", "./shaders/fragShader.fs");
     glBindFragDataLocation(shaderProgram, 0, "color");
+    check_GL_error();
     glLinkProgram(shaderProgram);
+
+    char log_buffer[1024];
+    log_buffer[0] = '\0';
+    glGetProgramInfoLog(shaderProgram, sizeof(log_buffer), NULL, log_buffer);
+    debug_print("Linking log: \n %s", log_buffer);
+
     glUseProgram(shaderProgram);
 
     // Draw a triangle from the vertices
-    // TODO only one attr usable
-    //GLint posAttrib = glGetAttribLocation(shaderProgram, "position");
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     // Specify the layout of the vertex data
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
     //             (index, size, type, stride, pointer);
-    //glDisableVertexAttribArray(0);
 
     // Create texture
     GLuint tex;
@@ -81,10 +97,12 @@ void* window_thread(void* args)
         ; // wait until host buffer is initialized
     debug_print("Host Buffer is ready!\n");
     sleep(1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_RGB, GL_BYTE, host_buffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_BYTE, test_img);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_RGB, GL_BYTE, host_buffer);
     //           target, level, internal_format, w, h, boarder,  format, pixels
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    check_GL_error();
 
     SDL_Event windowEvent;
     while (!do_stop_render) {
@@ -96,23 +114,22 @@ void* window_thread(void* args)
             }
         }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //glDrawArrays(GL_TRIANGLES, 0, COUNT_OF(vertices) / 2); // Draw the rectangle
+        glDrawArrays(GL_TRIANGLES, 0, COUNT_OF(vertices) / 2); // Draw the rectangle
 
         // draw texture
         //glBindTexture(GL_TEXTURE_2D, tex);
-        glEnable(GL_TEXTURE_2D);
-        glBegin(GL_QUADS);
-        glTexCoord2f(0, 0);
-        glVertex2f(-RENDER_WIDTH, -RENDER_WIDTH);
-        glTexCoord2f(0, RENDER_WIDTH);
-        glVertex2f(-RENDER_WIDTH, RENDER_WIDTH);
-        glTexCoord2f(RENDER_WIDTH, RENDER_WIDTH);
-        glVertex2f(RENDER_WIDTH, RENDER_WIDTH);
-        glTexCoord2f(RENDER_WIDTH, 0);
-        glVertex2f(RENDER_WIDTH, -RENDER_WIDTH);
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
-
+        //glEnable(GL_TEXTURE_2D);
+        //glBegin(GL_QUADS);
+        //glTexCoord2f(0, 0);
+        //glVertex2f(-RENDER_WIDTH, -RENDER_WIDTH);
+        //glTexCoord2f(0, RENDER_WIDTH);
+        //glVertex2f(-RENDER_WIDTH, RENDER_WIDTH);
+        //glTexCoord2f(RENDER_WIDTH, RENDER_WIDTH);
+        //glVertex2f(RENDER_WIDTH, RENDER_WIDTH);
+        //glTexCoord2f(RENDER_WIDTH, 0);
+        //glVertex2f(RENDER_WIDTH, -RENDER_WIDTH);
+        //glEnd();
+        //glDisable(GL_TEXTURE_2D);
         // Swap buffers
         SDL_GL_SwapWindow(window);
     }
@@ -142,11 +159,11 @@ inline string slurp(const string& path)
     return buf.str();
 }
 
-GLuint load_and_compile_shader(const char* source)
+GLuint load_and_compile_shader(const char* source, GLenum type)
 {
     // Compile and upload shaders
     debug_print("Compiling Shaders: ");
-    GLuint shader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
 
@@ -167,12 +184,12 @@ GLuint load_shader_program(const char* vtx_shader_file, const char* frag_shader_
     GLuint shaderProgram = glCreateProgram();
 
     string vtx_src = slurp(vtx_shader_file);
-    GLuint vtx = load_and_compile_shader(vtx_src.c_str());
+    GLuint vtx = load_and_compile_shader(vtx_src.c_str(), GL_VERTEX_SHADER);
     glAttachShader(shaderProgram, vtx);
     glDeleteShader(vtx);
 
     string frag_src = slurp(frag_shader_file);
-    GLuint frag = load_and_compile_shader(frag_src.c_str());
+    GLuint frag = load_and_compile_shader(frag_src.c_str(), GL_FRAGMENT_SHADER);
     glAttachShader(shaderProgram, frag);
     glDeleteShader(frag);
 

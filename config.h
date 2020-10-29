@@ -5,7 +5,7 @@
 
 //#define USE_CUDA
 
-#define DO_TERM_DISPLAY
+//#define DO_TERM_DISPLAY
 
 #define BLOCK_SIZE 512
 
