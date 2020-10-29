@@ -3,11 +3,9 @@
 
 #define DEBUG
 
-#define RENDER_WIDTH 0.9
-
 //#define USE_CUDA
 
-//#define DO_TERM_DISPLAY
+#define DO_TERM_DISPLAY
 
 #define BLOCK_SIZE 512
 
@@ -22,7 +20,7 @@
 //#define CANVAS_SIZE_X 500
 #endif
 #ifndef CANVAS_SIZE_Y
-#define CANVAS_SIZE_Y 375
+#define CANVAS_SIZE_Y 100
 //#define CANVAS_SIZE_Y 500
 #endif
 #ifndef NUM_RULE
@@ -32,6 +30,11 @@
 #define BUFFER_SIZE ((CANVAS_SIZE_X * CANVAS_SIZE_Y + 1) * sizeof(cell))
 #define NUM_CELLS (BUFFER_SIZE / sizeof(cell))
 #endif
+
+#define RENDER_WINDOW_WIDTH (CANVAS_SIZE_X*10)
+#define RENDER_WINDOW_HEIGHT (CANVAS_SIZE_Y*10)
+#define RENDER_WIDTH 0.9
+
 #ifdef DEBUG
 #define debug_print(...)     \
     do {                     \

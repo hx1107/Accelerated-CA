@@ -14,7 +14,7 @@
 #include <unistd.h>
 using namespace std;
 GLuint load_and_compile_shader(const char* source);
-GLuint load_shader_program(char* vtx_shader_file, char* frag_shader_file);
+GLuint load_shader_program(const char* vtx_shader_file, const char* frag_shader_file);
 
 int do_stop_render = 0;
 
@@ -41,7 +41,7 @@ void* window_thread(void* args)
     SDL_Init(SDL_INIT_EVERYTHING);
     debug_print("OpenGL Render Initialized!\n");
 
-    window = SDL_CreateWindow("Accelerated CA", 100, 100, 800, 600, SDL_WINDOW_OPENGL);
+    window = SDL_CreateWindow("Accelerated CA", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, RENDER_WINDOW_WIDTH, RENDER_WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
     context = SDL_GL_CreateContext(window);
     glewExperimental = GL_TRUE;
     glewInit();
