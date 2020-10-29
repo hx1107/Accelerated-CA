@@ -3,7 +3,9 @@
 
 #define DEBUG
 
-#define USE_CUDA
+#define RENDER_WIDTH 0.9
+
+//#define USE_CUDA
 
 //#define DO_TERM_DISPLAY
 
@@ -13,15 +15,15 @@
 #define NDIM 2
 #endif
 #ifndef N_COLOR_BIT
-#define N_COLOR_BIT sizeof(float)
+#define N_COLOR_BIT (sizeof(char)*3)  // Use 1 byte to match GLbyte
 #endif
 #ifndef CANVAS_SIZE_X
-//#define CANVAS_SIZE_X 100
-#define CANVAS_SIZE_X 500
+#define CANVAS_SIZE_X 100
+//#define CANVAS_SIZE_X 500
 #endif
 #ifndef CANVAS_SIZE_Y
-//#define CANVAS_SIZE_Y 375
-#define CANVAS_SIZE_Y 500
+#define CANVAS_SIZE_Y 375
+//#define CANVAS_SIZE_Y 500
 #endif
 #ifndef NUM_RULE
 #define NUM_RULE 10
