@@ -23,6 +23,7 @@ SDL_Window* window;
 SDL_GLContext context;
 
 float test_img[] = { 0, 1., 1, 0. };
+//unsigned int test_img[] = { 0, 9999, 9999, 0 };
 
 void check_GL_error()
 {
@@ -67,13 +68,13 @@ void* window_thread(void* args)
     glBindTexture(GL_TEXTURE_2D, tex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
-    while (!host_buffer)
+    while (host_buffer == nullptr)
         ; // wait until host buffer is initialized
-    debug_print("Host Buffer is ready!\n");
+    debug_print("Host Buffer is ready: %p\n", host_buffer);
     sleep(1);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, 2, 2, 0, GL_LUMINANCE, GL_BYTE, test_img);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_LUMINANCE, GL_FLOAT, host_buffer);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_LUMINANCE, GL_FLOAT, host_buffer);
     //           target, level, internal_format, w, h, boarder,  format, pixels
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -103,8 +104,9 @@ void* window_thread(void* args)
         // draw texture
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, tex);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, 2, 2, 0, GL_LUMINANCE, GL_FLOAT, test_img);
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_LUMINANCE, GL_FLOAT, host_buffer);
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, 2, 2, 0, GL_RED, GL_UNSIGNED_INT, test_img);
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, 2, 2, 0, GL_LUMINANCE, GL_FLOAT, test_img);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_LUMINANCE, GL_FLOAT, host_buffer);
 
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0);

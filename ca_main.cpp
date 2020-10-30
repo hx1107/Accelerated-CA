@@ -4,11 +4,8 @@
 #include <time.h>
 #include <unistd.h>
 
-typedef struct cell {
-    unsigned int x : N_COLOR_BIT;
-} cell;
 static cell *cuda_buffer1 = NULL, *cuda_buffer2 = NULL;
-//static cell* host_buffer = NULL;
+cell* host_buffer = NULL;
 
 __host__ __device__ inline size_t idx(int X, int Y)
 {
@@ -131,8 +128,6 @@ inline void copy_buffer_to_host(cell* dst, cell* src)
 {
 #ifndef USE_CUDA
     memcpy(dst, src, BUFFER_SIZE);
-    //memset(dst, 1, BUFFER_SIZE / 8);                            //TODO Used for debug buffer display
-    //memset(((char*)dst) + BUFFER_SIZE / 2, 0, BUFFER_SIZE / 2); //TODO Used for debug buffer display
 #else
     cudaMemcpy(dst, src, BUFFER_SIZE, cudaMemcpyDeviceToHost);
 #endif
