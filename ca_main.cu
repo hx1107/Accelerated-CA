@@ -131,7 +131,7 @@ inline void copy_buffer_to_host(cell* dst, cell* src)
 {
 #ifndef USE_CUDA
     memcpy(dst, src, BUFFER_SIZE);
-    memset(dst, 1, BUFFER_SIZE / 8);                            //TODO Used for debug buffer display
+    //memset(dst, 1, BUFFER_SIZE / 8);                            //TODO Used for debug buffer display
     //memset(((char*)dst) + BUFFER_SIZE / 2, 0, BUFFER_SIZE / 2); //TODO Used for debug buffer display
 #else
     cudaMemcpy(dst, src, BUFFER_SIZE, cudaMemcpyDeviceToHost);
