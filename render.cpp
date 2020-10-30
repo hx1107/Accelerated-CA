@@ -21,21 +21,8 @@ int do_stop_render = 0;
 pthread_t win_thread_id;
 SDL_Window* window;
 SDL_GLContext context;
-//GLfloat vertices[] = {
-////  Position      Color             Texcoords
-//-0.5f, 0.5f, 0.0f, 0.0f, // Top-left
-//0.5f, 0.5f, 1.0f, 0.0f,  // Top-right
-//0.5f, -0.5f, 1.0f, 1.0f, // Bottom-right
-//-0.5f, -0.5f, 0.0f, 1.0f // Bottom-left
-//};
-GLfloat vertices[] = {
-    -0.5f, 0.5f,  // Top-left
-    0.5f, 0.5f,   // Top-right
-    0.5f, -0.5f,  // Bottom-right
-    -0.5f, -0.5f, // Bottom-left
-};
 
-float test_img[4] = { 0, 1., 0, 1. };
+float test_img[] = { 0, 1., 1, 0. };
 
 void check_GL_error()
 {
@@ -63,30 +50,15 @@ void* window_thread(void* args)
     // Default to blue background
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
-    GLuint VertexArrayID;
-    glGenVertexArrays(1, &VertexArrayID);
-    glBindVertexArray(VertexArrayID);
-    GLuint vertexbuffer;
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
     // Compile shaders and use them
-    GLuint shaderProgram = load_shader_program("./shaders/vtxShader.vs", "./shaders/fragShader.fs");
-    glBindFragDataLocation(shaderProgram, 0, "color");
-    check_GL_error();
-    glLinkProgram(shaderProgram);
-    char log_buffer[1024];
-    glGetProgramInfoLog(shaderProgram, sizeof(log_buffer), NULL, log_buffer);
-    debug_print("Linking log: \n\t %s", log_buffer);
-    glUseProgram(shaderProgram);
-
-    // Draw a triangle from the vertices
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    // Specify the layout of the vertex data
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
-    //             (index, size, type, stride, pointer);
+    //GLuint shaderProgram = load_shader_program("./shaders/vtxShader.vs", "./shaders/fragShader.fs");
+    //glBindFragDataLocation(shaderProgram, 0, "color");
+    //check_GL_error();
+    //glLinkProgram(shaderProgram);
+    //char log_buffer[1024];
+    //glGetProgramInfoLog(shaderProgram, sizeof(log_buffer), NULL, log_buffer);
+    //debug_print("Linking log: \n\t %s", log_buffer);
+    //glUseProgram(shaderProgram);
 
     // Create texture
     glEnable(GL_TEXTURE_2D);
@@ -100,8 +72,8 @@ void* window_thread(void* args)
     debug_print("Host Buffer is ready!\n");
     sleep(1);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, 2, 2, 0, GL_LUMINANCE, GL_BYTE, test_img);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_RGB, GL_BYTE, host_buffer);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, 2, 2, 0, GL_LUMINANCE, GL_BYTE, test_img);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_LUMINANCE, GL_FLOAT, host_buffer);
     //           target, level, internal_format, w, h, boarder,  format, pixels
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -127,12 +99,12 @@ void* window_thread(void* args)
         glLoadIdentity();
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        //glDrawArrays(GL_TRIANGLES, 0, COUNT_OF(vertices) / 2); // Draw the rectangle
 
         // draw texture
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, tex);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, 2, 2, 0, GL_LUMINANCE, GL_FLOAT, test_img);
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_LUMINANCE, GL_FLOAT, host_buffer);
 
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0);

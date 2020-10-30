@@ -13,7 +13,7 @@
 #define NDIM 2
 #endif
 #ifndef N_COLOR_BIT
-#define N_COLOR_BIT (sizeof(char)*3)  // Use 1 byte to match GLbyte
+#define N_COLOR_BIT (sizeof(float))
 #endif
 #ifndef CANVAS_SIZE_X
 #define CANVAS_SIZE_X 100
