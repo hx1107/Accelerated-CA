@@ -35,7 +35,7 @@ GLfloat vertices[] = {
     -0.5f, -0.5f, // Bottom-left
 };
 
-GLbyte test_img[4] = { 0, 1, 0, 1 };
+float test_img[4] = { 0, 1., 0, 1. };
 
 void check_GL_error()
 {
@@ -44,6 +44,8 @@ void check_GL_error()
     if ((errCode = glGetError()) != GL_NO_ERROR) {
         errString = gluErrorString(errCode);
         debug_print("GL Error: %s\n", errString);
+    } else {
+        debug_print("No error\n");
     }
 }
 
@@ -74,12 +76,9 @@ void* window_thread(void* args)
     glBindFragDataLocation(shaderProgram, 0, "color");
     check_GL_error();
     glLinkProgram(shaderProgram);
-
     char log_buffer[1024];
-    log_buffer[0] = '\0';
     glGetProgramInfoLog(shaderProgram, sizeof(log_buffer), NULL, log_buffer);
-    debug_print("Linking log: \n %s", log_buffer);
-
+    debug_print("Linking log: \n\t %s", log_buffer);
     glUseProgram(shaderProgram);
 
     // Draw a triangle from the vertices
@@ -90,18 +89,26 @@ void* window_thread(void* args)
     //             (index, size, type, stride, pointer);
 
     // Create texture
+    glEnable(GL_TEXTURE_2D);
     GLuint tex;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
     while (!host_buffer)
         ; // wait until host buffer is initialized
     debug_print("Host Buffer is ready!\n");
     sleep(1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_BYTE, test_img);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, 2, 2, 0, GL_LUMINANCE, GL_BYTE, test_img);
     //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, CANVAS_SIZE_X, CANVAS_SIZE_Y, 0, GL_RGB, GL_BYTE, host_buffer);
     //           target, level, internal_format, w, h, boarder,  format, pixels
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glDisable(GL_TEXTURE_2D);
     check_GL_error();
 
     SDL_Event windowEvent;
@@ -114,23 +121,35 @@ void* window_thread(void* args)
             }
         }
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glDrawArrays(GL_TRIANGLES, 0, COUNT_OF(vertices) / 2); // Draw the rectangle
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        //glDrawArrays(GL_TRIANGLES, 0, COUNT_OF(vertices) / 2); // Draw the rectangle
 
         // draw texture
-        //glBindTexture(GL_TEXTURE_2D, tex);
-        //glEnable(GL_TEXTURE_2D);
-        //glBegin(GL_QUADS);
-        //glTexCoord2f(0, 0);
-        //glVertex2f(-RENDER_WIDTH, -RENDER_WIDTH);
-        //glTexCoord2f(0, RENDER_WIDTH);
-        //glVertex2f(-RENDER_WIDTH, RENDER_WIDTH);
-        //glTexCoord2f(RENDER_WIDTH, RENDER_WIDTH);
-        //glVertex2f(RENDER_WIDTH, RENDER_WIDTH);
-        //glTexCoord2f(RENDER_WIDTH, 0);
-        //glVertex2f(RENDER_WIDTH, -RENDER_WIDTH);
-        //glEnd();
-        //glDisable(GL_TEXTURE_2D);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE32F_ARB, 2, 2, 0, GL_LUMINANCE, GL_FLOAT, test_img);
+
+        glBegin(GL_QUADS);
+        glTexCoord2f(0, 0);
+        glVertex2f(-RENDER_WIDTH, -RENDER_WIDTH);
+        glTexCoord2f(0, RENDER_WIDTH);
+        glVertex2f(-RENDER_WIDTH, RENDER_WIDTH);
+        glTexCoord2f(RENDER_WIDTH, RENDER_WIDTH);
+        glVertex2f(RENDER_WIDTH, RENDER_WIDTH);
+        glTexCoord2f(RENDER_WIDTH, 0);
+        glVertex2f(RENDER_WIDTH, -RENDER_WIDTH);
+        glEnd();
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
+
         // Swap buffers
+        glFlush();
         SDL_GL_SwapWindow(window);
     }
 

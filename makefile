@@ -1,7 +1,7 @@
 CC= g++
 NVCC= nvcc
 CUDAFLAGS= -ccbin gcc-7 -g
-LIBS= -lm -lstdc++ -lGL -lSDL2 -lGLEW
+LIBS= -lm -lstdc++ -lGL -lSDL2 -lGLEW -lGLU
 CFLAGS= -DNDIM=2 -O3 -std=c++11
 OBJS= ca_main.o render.o
 
