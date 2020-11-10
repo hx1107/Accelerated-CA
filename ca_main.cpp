@@ -1,4 +1,5 @@
 #include "config.h"
+#include "load_rle.h"
 #include "render.h"
 #include <stdio.h>
 #include <time.h>
@@ -15,6 +16,8 @@ __host__ __device__ inline size_t idx(int X, int Y)
         return NUM_CELLS - 1;
     }
 }
+//#define idx(X, Y) \
+    //(((int)Y >= 0 && (int)X >= 0 && ((Y * CANVAS_SIZE_X + X) < NUM_CELLS - 1)) ? (Y * CANVAS_SIZE_X + X) : NUM_CELLS - 1)
 __host__ __device__ inline size_t xdi_x(size_t i)
 {
     return i % CANVAS_SIZE_X;
@@ -159,14 +162,17 @@ int main(void)
 {
     debug_print("-------------CA Running-----------\n");
     init();
-    for (int i = CANVAS_SIZE_X * 3 / 7; i < CANVAS_SIZE_X * 4 / 7; i++) {
-        host_buffer[idx(i, i)].x = 1;
-        host_buffer[idx(i, i + 1)].x = 1;
-        host_buffer[idx(i, i - 1)].x = 1;
-        host_buffer[idx(i, i - 5)].x = 1;
-        host_buffer[idx(i - 1, i - 6)].x = 1;
-        host_buffer[idx(i, i - 6)].x = 1;
-    }
+    //for (int i = CANVAS_SIZE_X * 3 / 7; i < CANVAS_SIZE_X * 4 / 7; i++) {
+    //host_buffer[idx(i, i)].x = 1;
+    //host_buffer[idx(i, i + 1)].x = 1;
+    //host_buffer[idx(i, i - 1)].x = 1;
+    //host_buffer[idx(i, i - 5)].x = 1;
+    //host_buffer[idx(i - 1, i - 6)].x = 1;
+    //host_buffer[idx(i, i - 6)].x = 1;
+    //}
+    //load_rle_file(host_buffer, "./saves/glider.rle", .5, .5);
+    //load_rle_file(host_buffer, "./saves/Gosper glider gun.rle", .5, .5);
+    load_rle_file(host_buffer, "./saves/rats_synth.rle", .5, .5);
     print_buffer(host_buffer);
     copy_buffer_to_device(cuda_buffer1, host_buffer);
 
@@ -176,8 +182,12 @@ int main(void)
 #ifdef DO_TERM_DISPLAY
     int delay = 30000;
 #else
-    int delay = 0;
+    int delay = 30000;
+    //int delay = 0;
 #endif
+    //while (0 == display_ready)
+        //; //wait for display
+    debug_print("Display is now ready\n");
     for (int i = 0; i < iteration / 2; i++) {
         update(cuda_buffer2, cuda_buffer1);
         copy_buffer_to_host(host_buffer, cuda_buffer2);

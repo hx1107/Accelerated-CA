@@ -17,6 +17,7 @@ GLuint load_and_compile_shader(const char* source);
 GLuint load_shader_program(const char* vtx_shader_file, const char* frag_shader_file);
 
 int do_stop_render = 0;
+int display_ready = 0;
 
 pthread_t win_thread_id;
 SDL_Window* window;
@@ -125,6 +126,7 @@ void* window_thread(void* args)
         // Swap buffers
         glFlush();
         SDL_GL_SwapWindow(window);
+        display_ready = 1;
     }
 
     return NULL;
