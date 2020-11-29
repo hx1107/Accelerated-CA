@@ -17,17 +17,17 @@
 #endif
 #ifndef CANVAS_SIZE_X
 //#define CANVAS_SIZE_X 128
-#define CANVAS_SIZE_X 500
+//#define CANVAS_SIZE_X 500
 //#define CANVAS_SIZE_X 1920
-//#define CANVAS_SIZE_X 1920*2
-#define CANVAS_SIZE_X 99551
+#define CANVAS_SIZE_X (1920 * 2)
+//#define CANVAS_SIZE_X (ssize_t)99551
 #endif
 #ifndef CANVAS_SIZE_Y
 //#define CANVAS_SIZE_Y 128
-#define CANVAS_SIZE_Y 500
+//#define CANVAS_SIZE_Y 500
 //#define CANVAS_SIZE_Y 1080
-//#define CANVAS_SIZE_Y 1080*2
-#define CANVAS_SIZE_Y 99343
+#define CANVAS_SIZE_Y (1080 * 2)
+//#define CANVAS_SIZE_Y (ssize_t)99343
 #endif
 #ifndef NUM_RULE
 #define NUM_RULE 10
@@ -37,7 +37,7 @@
 #define NUM_CELLS (BUFFER_SIZE / sizeof(cell))
 #endif
 
-#define RATIO_CELL_TO_PIXEL 5
+#define RATIO_CELL_TO_PIXEL 2
 #define RENDER_WINDOW_WIDTH (CANVAS_SIZE_X * RATIO_CELL_TO_PIXEL)
 #define RENDER_WINDOW_HEIGHT (CANVAS_SIZE_Y * RATIO_CELL_TO_PIXEL)
 #define RENDER_WIDTH 0.95

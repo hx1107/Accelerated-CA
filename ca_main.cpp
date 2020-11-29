@@ -8,7 +8,7 @@
 static cell *cuda_buffer1 = NULL, *cuda_buffer2 = NULL;
 cell* host_buffer = NULL;
 
-__host__ __device__ inline size_t idx(int X, int Y)
+__host__ __device__ inline size_t idx(ssize_t X, ssize_t Y)
 {
     if (Y >= 0 && X >= 0 && ((Y * CANVAS_SIZE_X + X) < NUM_CELLS - 1)) {
         return (Y * CANVAS_SIZE_X + X);
@@ -110,8 +110,8 @@ inline
     update_cell_bin_2d_CUDA<<<ceil(CANVAS_SIZE_X * CANVAS_SIZE_Y / BLOCK_SIZE), BLOCK_SIZE>>>(dest, origin);
     return;
 #else
-    for (int x = 0; x < CANVAS_SIZE_X; x++) {
-        for (int y = 0; y < CANVAS_SIZE_Y; y++) {
+    for (ssize_t x = 0; x < CANVAS_SIZE_X; x++) {
+        for (ssize_t y = 0; y < CANVAS_SIZE_Y; y++) {
             size_t i = idx(x, y);
             dest[i].x = update_cell_bin_2d(origin[i],
                 origin[idx(x - 1, y - 1)],
@@ -148,8 +148,8 @@ inline void print_buffer(cell* src)
 {
 #ifdef DO_TERM_DISPLAY
     fprintf(stdout, "---------------------Iteration-------------------------\n");
-    for (int x = 0; x < CANVAS_SIZE_X; x++) {
-        for (int y = 0; y < CANVAS_SIZE_Y; y++) {
+    for (ssize_t x = 0; x < CANVAS_SIZE_X; x++) {
+        for (ssize_t y = 0; y < CANVAS_SIZE_Y; y++) {
             //debug_print("(%zu, %zu) -> %zu\n", x, y, idx(x, y));
             fprintf(stdout, src[idx(x, y)].x ? " " : "█");
         }
@@ -158,7 +158,7 @@ inline void print_buffer(cell* src)
 #endif
 }
 
-int main(void)
+int main(int argc, char** argv)
 {
     debug_print("-------------CA Running-----------\n");
     init();
@@ -170,10 +170,11 @@ int main(void)
     //host_buffer[idx(i - 1, i - 6)].x = 1;
     //host_buffer[idx(i, i - 6)].x = 1;
     //}
-    //load_rle_file(host_buffer, "./saves/glider.rle", .5, .5);
+    load_rle_file(host_buffer, argv[1] == NULL ? "./saves/glider.rle" : argv[1], .5, .5);
+    //load_rle_file(host_buffer, argv[1] == NULL ? "./saves/glider.rle" : argv[1], .3, .85);
     //load_rle_file(host_buffer, "./saves/Gosper glider gun.rle", .5, .5);
     //load_rle_file(host_buffer, "./saves/rats_synth.rle", .5, .5);
-    load_rle_file(host_buffer, "./saves/fullutm.rle", 0, 0);
+    //load_rle_file(host_buffer, "./saves/fullutm.rle", 0, 0);
     print_buffer(host_buffer);
     copy_buffer_to_device(cuda_buffer1, host_buffer);
 
@@ -183,8 +184,8 @@ int main(void)
 #ifdef DO_TERM_DISPLAY
     int delay = 30000;
 #else
-    int delay = 30000;
-    //int delay = 0;
+    //int delay = 10000;
+    int delay = 0;
 #endif
     //while (0 == display_ready)
     //; //wait for display

@@ -9,12 +9,13 @@
 
 using namespace std;
 
-static inline size_t idx(int X, int Y)
+static inline ssize_t idx(ssize_t X, ssize_t Y)
 {
     if (Y >= 0 && X >= 0 && ((Y * CANVAS_SIZE_X + X) < NUM_CELLS - 1)) {
-        return (Y * CANVAS_SIZE_X + X);
+        //debug_print("idx: (%zd,%zd) -> %zu\n", X, Y, Y * CANVAS_SIZE_X + X);
+        return (ssize_t)(Y * CANVAS_SIZE_X + X);
     } else {
-        return NUM_CELLS - 1;
+        return (ssize_t)NUM_CELLS - 1;
     }
 }
 
@@ -43,7 +44,7 @@ inline string slurp(const string& path)
 }
 
 /** starting from x, set n cells to val**/
-void setN(cell* dst, int x, int y, int n, int val)
+void setN(cell* dst, ssize_t x, ssize_t y, ssize_t n, ssize_t val)
 {
     if (n == 0)
         n = 1;
@@ -58,10 +59,10 @@ void setN(cell* dst, int x, int y, int n, int val)
 void load_rle_file(cell* dst, string path, float locx = 0.5, float locy = 0.5)
 {
     std::ifstream input(path);
-    int width = -1, height = -1;
-    int upperx = -1;
-    int uppery = -1;
-    int x = -1, y = -1;
+    ssize_t width = -1, height = -1;
+    ssize_t upperx = -1;
+    ssize_t uppery = -1;
+    ssize_t x = -1, y = -1;
     string counter = "0";
     for (std::string eachLine; getline(input, eachLine);) {
         //cout << "Parse line: [" << eachLine << "]" << endl;
@@ -77,8 +78,13 @@ void load_rle_file(cell* dst, string path, float locx = 0.5, float locy = 0.5)
                 abort();
             }
             if (upperx == -1) { // not the first content line
+                // Place by center
                 upperx = CANVAS_SIZE_X * locx - (float)width * 0.5;
                 uppery = CANVAS_SIZE_Y * locy - (float)height * 0.5;
+                // Place by upper left corner
+                //upperx = CANVAS_SIZE_X * locx;
+                //uppery = CANVAS_SIZE_Y * locy;
+                debug_print("Upper X: %zd, Upper Y: %zd\n", upperx, uppery);
                 x = upperx, y = uppery;
                 counter = "0";
             }
@@ -93,11 +99,6 @@ void load_rle_file(cell* dst, string path, float locx = 0.5, float locy = 0.5)
                     x += stoi(counter) == 0 ? 1 : stoi(counter);
                     counter = "0";
                 } else if (c == '$') { // EOL
-                    if (stoi(counter)) {
-                        //debug_print("File is bad: counter [%s], line %d: [%s]\n", counter.c_str(), eachLine.c_str());
-                        cout << "Bad file, counter: " << counter << ", Line: " << eachLine << endl;
-                        //abort();
-                    }
                     //y += 1;
                     y += stoi(counter) == 0 ? 1 : stoi(counter);
                     x = upperx;
