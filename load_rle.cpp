@@ -98,7 +98,8 @@ void load_rle_file(cell* dst, string path, float locx = 0.5, float locy = 0.5)
                         cout << "Bad file, counter: " << counter << ", Line: " << eachLine << endl;
                         //abort();
                     }
-                    y += 1;
+                    //y += 1;
+                    y += stoi(counter) == 0 ? 1 : stoi(counter);
                     x = upperx;
                     counter = "0";
                     debug_print("---\n");

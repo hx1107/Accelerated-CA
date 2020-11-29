@@ -3,7 +3,7 @@
 
 #define DEBUG
 
-//#define USE_CUDA
+#define USE_CUDA
 
 //#define DO_TERM_DISPLAY
 
@@ -20,12 +20,14 @@
 #define CANVAS_SIZE_X 500
 //#define CANVAS_SIZE_X 1920
 //#define CANVAS_SIZE_X 1920*2
+#define CANVAS_SIZE_X 99551
 #endif
 #ifndef CANVAS_SIZE_Y
 //#define CANVAS_SIZE_Y 128
 #define CANVAS_SIZE_Y 500
 //#define CANVAS_SIZE_Y 1080
 //#define CANVAS_SIZE_Y 1080*2
+#define CANVAS_SIZE_Y 99343
 #endif
 #ifndef NUM_RULE
 #define NUM_RULE 10

@@ -172,7 +172,8 @@ int main(void)
     //}
     //load_rle_file(host_buffer, "./saves/glider.rle", .5, .5);
     //load_rle_file(host_buffer, "./saves/Gosper glider gun.rle", .5, .5);
-    load_rle_file(host_buffer, "./saves/rats_synth.rle", .5, .5);
+    //load_rle_file(host_buffer, "./saves/rats_synth.rle", .5, .5);
+    load_rle_file(host_buffer, "./saves/fullutm.rle", 0, 0);
     print_buffer(host_buffer);
     copy_buffer_to_device(cuda_buffer1, host_buffer);
 
@@ -186,7 +187,7 @@ int main(void)
     //int delay = 0;
 #endif
     //while (0 == display_ready)
-        //; //wait for display
+    //; //wait for display
     debug_print("Display is now ready\n");
     for (int i = 0; i < iteration / 2; i++) {
         update(cuda_buffer2, cuda_buffer1);

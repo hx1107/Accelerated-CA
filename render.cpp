@@ -6,6 +6,7 @@
 #include <GL/glew.h>
 #include <GL/glext.h>
 #include <GL/glu.h>
+#include <GL/glut.h>
 #include <SDL2/SDL.h>
 #include <fstream>
 #include <iostream>
@@ -38,16 +39,33 @@ void check_GL_error()
     }
 }
 
+void keyboardCB(unsigned char key, int x, int y)
+{
+    debug_print("Key: %c\n", key);
+    switch (key) {
+    case 27: // Escape key
+        SDL_DestroyWindow(window);
+        exit(0);
+        break;
+    }
+    glutPostRedisplay();
+}
+
 void* window_thread(void* args)
 {
     debug_print("Thread for window is running\n");
     SDL_Init(SDL_INIT_EVERYTHING);
+    int argc = 1;
+    char* argv[2] = { program_invocation_name, NULL };
+    glutInit(&argc, argv);
     debug_print("OpenGL Render Initialized!\n");
 
     window = SDL_CreateWindow("Accelerated CA", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, RENDER_WINDOW_WIDTH, RENDER_WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
     context = SDL_GL_CreateContext(window);
     glewExperimental = GL_TRUE;
     glewInit();
+
+    glutKeyboardFunc(keyboardCB); // exit on esc
 
     // Default to blue background
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
